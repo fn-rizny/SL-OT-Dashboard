@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CEx OT Manager Dashboard</title>
-    <script src="https://apis.google.com/js/api.js"></script>
     <style>
         * {
             margin: 0;
@@ -59,15 +58,50 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
-        .auth-button.logout {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: rgba(239, 68, 68, 0.4);
-        }
-
         .main-container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
+        }
+
+        .login-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .login-container h2 {
+            margin-bottom: 1rem;
+            color: #1a202c;
+        }
+
+        .login-container p {
+            color: #718096;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3182ce;
         }
 
         .controls {
@@ -110,60 +144,6 @@
             outline: none;
             border-color: #4299e1;
             box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
-        }
-
-        .btn {
-            padding: 10px 16px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 14px;
-        }
-
-        .btn-primary {
-            background: #4299e1;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #3182ce;
-        }
-
-        .btn-secondary {
-            background: #e2e8f0;
-            color: #2d3748;
-        }
-
-        .btn-secondary:hover {
-            background: #cbd5e0;
-        }
-
-        .btn-success {
-            background: #48bb78;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #38a169;
-        }
-
-        .btn-export {
-            background: #ed8936;
-            color: white;
-        }
-
-        .btn-export:hover {
-            background: #dd6b20;
-        }
-
-        .dashboard {
-            display: none;
-        }
-
-        .dashboard.active {
-            display: block;
         }
 
         .stats {
@@ -271,10 +251,27 @@
             color: #2c5282;
         }
 
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #718096;
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+        }
+
+        .btn-export {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #dd6b20;
         }
 
         .error {
@@ -293,25 +290,8 @@
             margin: 1rem 0;
         }
 
-        .login-container {
-            max-width: 500px;
-            margin: 4rem auto;
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        .login-container h2 {
-            margin-bottom: 1rem;
-            color: #1a202c;
-        }
-
-        .login-container p {
-            color: #718096;
-            margin-bottom: 2rem;
-            line-height: 1.6;
+        .hidden {
+            display: none;
         }
 
         @media (max-width: 768px) {
@@ -360,11 +340,12 @@
 
     <div class="main-container">
         <div id="loginSection" class="login-container">
-            <h2>Welcome</h2>
-            <p>Click "Connect Google Sheet" in the header to authenticate and start tracking OT hours for your team.</p>
+            <h2>Welcome to OT Manager Dashboard</h2>
+            <p>Click "Connect Google Sheet" in the header to authenticate and load your team's overtime data.</p>
+            <p style="font-size: 12px; color: #a0aec0; margin-top: 1rem;">You will be asked to sign in with Google and grant permission to access your Google Sheet.</p>
         </div>
 
-        <div id="dashboardSection" class="dashboard">
+        <div id="dashboardSection" class="hidden">
             <div class="controls">
                 <div class="control-group">
                     <label>Sheet Date</label>
@@ -385,9 +366,10 @@
                         <option value="Confirmed">Confirmed</option>
                     </select>
                 </div>
-                <button class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
-                <button class="btn btn-secondary" onclick="refreshData()">Refresh</button>
-                <button class="btn btn-export" onclick="exportToCSV()">Export CSV</button>
+                <button class="btn btn-primary btn-sm" onclick="applyFilters()">Apply</button>
+                <button class="btn btn-primary btn-sm" onclick="refreshData()">Refresh</button>
+                <button class="btn btn-export btn-sm" onclick="exportToCSV()">Export CSV</button>
+                <button class="btn btn-primary btn-sm" onclick="logout()" style="background: #e53e3e;">Logout</button>
             </div>
 
             <div class="stats">
@@ -432,84 +414,77 @@
         </div>
     </div>
 
+    <script src="https://apis.google.com/js/api.js"></script>
     <script>
+        const SPREADSHEET_ID = '1Z4mKL3CsZDQ3ROksmrhTwqZJpWYPWwlEVU09wQ_u2-g';
         const CLIENT_ID = '1082542759771-pihi7sgr47v4lutnpuu3bkee93jmlvrl.apps.googleusercontent.com';
-        const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+        const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
         
         let sheetData = [];
         let isAuthenticated = false;
 
-        // Initialize Google API
-        function initGoogleAPI() {
+        function initGoogle() {
             gapi.load('client:auth2', () => {
                 gapi.client.init({
                     clientId: CLIENT_ID,
-                    scope: SCOPES.join(' ')
+                    scope: SCOPES,
+                    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
                 }).then(() => {
-                    const auth2 = gapi.auth2.getAuthInstance();
-                    isAuthenticated = auth2.isSignedIn.get();
-                    updateAuthUI();
-                    
-                    auth2.isSignedIn.listen(updateAuthUI);
+                    const auth = gapi.auth2.getAuthInstance();
+                    isAuthenticated = auth.isSignedIn.get();
+                    updateUI();
+                    auth.isSignedIn.listen(updateUI);
+                }).catch(err => {
+                    console.error('Init error:', err);
+                    showMessage('Error initializing: ' + err.message, 'error');
                 });
             });
         }
 
-        function handleAuth() {
-            const auth2 = gapi.auth2.getAuthInstance();
-            if (isAuthenticated) {
-                auth2.signOut();
-            } else {
-                auth2.signIn();
-            }
-        }
-
-        function updateAuthUI() {
-            const auth2 = gapi.auth2.getAuthInstance();
-            isAuthenticated = auth2.isSignedIn.get();
-
-            const button = document.getElementById('authButton');
+        function updateUI() {
+            const auth = gapi.auth2.getAuthInstance();
+            isAuthenticated = auth.isSignedIn.get();
             const loginSection = document.getElementById('loginSection');
             const dashboardSection = document.getElementById('dashboardSection');
 
             if (isAuthenticated) {
-                button.textContent = 'Logout';
-                button.classList.add('logout');
-                loginSection.style.display = 'none';
-                dashboardSection.classList.add('active');
-                loadSheetData();
+                loginSection.classList.add('hidden');
+                dashboardSection.classList.remove('hidden');
+                loadData();
             } else {
-                button.textContent = 'Connect Google Sheet';
-                button.classList.remove('logout');
-                loginSection.style.display = 'block';
-                dashboardSection.classList.remove('active');
+                loginSection.classList.remove('hidden');
+                dashboardSection.classList.add('hidden');
             }
         }
 
-        function showMessage(message, type = 'info') {
-            const container = document.getElementById('messageContainer');
-            const className = type === 'error' ? 'error' : (type === 'success' ? 'success' : 'info');
-            container.innerHTML = `<div class="${className}">${message}</div>`;
-            setTimeout(() => {
-                container.innerHTML = '';
-            }, 5000);
+        function handleAuth() {
+            const auth = gapi.auth2.getAuthInstance();
+            if (isAuthenticated) {
+                auth.signOut();
+            } else {
+                auth.signIn();
+            }
         }
 
-        async function loadSheetData() {
+        function logout() {
+            const auth = gapi.auth2.getAuthInstance();
+            auth.signOut();
+        }
+
+        async function loadData() {
             try {
+                showMessage('Loading data...', 'info');
                 const response = await gapi.client.sheets.spreadsheets.values.get({
-                    spreadsheetId: '1Z4mKL3CsZDQ3ROksmrhTwqZJpWYPWwlEVU09wQ_u2-g',
+                    spreadsheetId: SPREADSHEET_ID,
                     range: 'Sheet1!A:J'
                 });
 
                 const rows = response.result.values;
                 if (!rows || rows.length < 2) {
-                    showMessage('No data found in sheet', 'error');
+                    showMessage('No data found', 'error');
                     return;
                 }
 
-                // Parse data
-                const headers = rows[0];
                 sheetData = rows.slice(1).map(row => ({
                     nxtId: row[0] || '',
                     role: row[1] || '',
@@ -522,38 +497,21 @@
                     finalHours: parseFloat(row[8]) || 0,
                     remarks: row[9] || '',
                     grossSalary: 0,
-                    status: 'Pending',
-                    otAmount: 0
+                    status: 'Pending'
                 }));
-
-                // Extract date from header
-                const dateMatch = rows[0].find(cell => cell && cell.match(/\d+\/\d+\/\d+/));
-                if (dateMatch) {
-                    document.getElementById('sheetDate').value = dateMatch;
-                }
 
                 renderTable();
                 updateStats();
+                showMessage('Data loaded successfully!', 'success');
             } catch (error) {
-                showMessage('Error loading sheet: ' + error.message, 'error');
+                console.error('Load error:', error);
+                showMessage('Error: ' + error.message, 'error');
             }
-        }
-
-        function calculateOT(row) {
-            const multiplier = parseFloat(document.getElementById('holidayType').value);
-            const hours = parseFloat(row.finalHours) || 0;
-            const salary = parseFloat(row.grossSalary) || 0;
-
-            if (salary && hours) {
-                return (salary / 198) * hours * multiplier;
-            }
-            return 0;
         }
 
         function renderTable() {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-
             const filterStatus = document.getElementById('filterStatus').value;
 
             sheetData.forEach((row, index) => {
@@ -566,29 +524,20 @@
                     <td>${row.name}</td>
                     <td>${row.role}</td>
                     <td>${row.finalHours}</td>
-                    <td>
-                        <input 
-                            type="number" 
-                            class="editable" 
-                            value="${row.grossSalary}" 
-                            onchange="updateSalary(${index}, this.value)"
-                            placeholder="0"
-                        >
-                    </td>
+                    <td><input type="number" class="editable" value="${row.grossSalary}" onchange="updateSalary(${index}, this.value)"></td>
                     <td><span class="ot-amount">${otAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></td>
-                    <td>
-                        <span class="status-${row.status.toLowerCase()}">
-                            ${row.status}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-success btn-sm" onclick="confirmRow(${index})">
-                            ${row.status === 'Confirmed' ? '✓ Confirmed' : 'Confirm'}
-                        </button>
-                    </td>
+                    <td><span class="status-${row.status.toLowerCase()}">${row.status}</span></td>
+                    <td><button class="btn btn-success btn-sm" onclick="toggleStatus(${index})">${row.status === 'Confirmed' ? '✓' : 'Confirm'}</button></td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        function calculateOT(row) {
+            const multiplier = parseFloat(document.getElementById('holidayType').value);
+            const salary = parseFloat(row.grossSalary) || 0;
+            const hours = parseFloat(row.finalHours) || 0;
+            return (salary / 198) * hours * multiplier;
         }
 
         function updateSalary(index, value) {
@@ -597,23 +546,16 @@
             updateStats();
         }
 
-        function confirmRow(index) {
+        function toggleStatus(index) {
             sheetData[index].status = sheetData[index].status === 'Confirmed' ? 'Pending' : 'Confirmed';
             renderTable();
             updateStats();
-            showMessage('Row status updated', 'success');
-        }
-
-        function applyFilters() {
-            renderTable();
         }
 
         function updateStats() {
             const multiplier = parseFloat(document.getElementById('holidayType').value);
-            
-            let totalEmployees = sheetData.length;
-            let confirmedCount = sheetData.filter(r => r.status === 'Confirmed').length;
-            let pendingCount = sheetData.filter(r => r.status === 'Pending').length;
+            const confirmed = sheetData.filter(r => r.status === 'Confirmed').length;
+            const pending = sheetData.filter(r => r.status === 'Pending').length;
             
             let totalOT = sheetData.reduce((sum, row) => {
                 if (row.grossSalary && row.finalHours) {
@@ -622,18 +564,18 @@
                 return sum;
             }, 0);
 
-            document.getElementById('totalEmployees').textContent = totalEmployees;
-            document.getElementById('confirmedCount').textContent = confirmedCount;
-            document.getElementById('pendingCount').textContent = pendingCount;
-            document.getElementById('totalOT').textContent = totalOT.toLocaleString('en-US', { 
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: 2 
-            });
+            document.getElementById('totalEmployees').textContent = sheetData.length;
+            document.getElementById('confirmedCount').textContent = confirmed;
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('totalOT').textContent = totalOT.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function applyFilters() {
+            renderTable();
         }
 
         function refreshData() {
-            loadSheetData();
-            showMessage('Data refreshed', 'success');
+            loadData();
         }
 
         function exportToCSV() {
@@ -658,17 +600,23 @@
             a.href = url;
             a.download = `OT_Report_${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
-            window.URL.revokeObjectURL(url);
         }
 
-        // Initialize on load
-        window.addEventListener('load', initGoogleAPI);
+        function showMessage(msg, type = 'info') {
+            const container = document.getElementById('messageContainer');
+            const className = type === 'error' ? 'error' : (type === 'success' ? 'success' : 'info');
+            container.innerHTML = `<div class="${className}">${msg}</div>`;
+            if (type !== 'info') {
+                setTimeout(() => { container.innerHTML = ''; }, 4000);
+            }
+        }
 
-        // Update OT amounts when holiday type changes
         document.getElementById('holidayType').addEventListener('change', () => {
             renderTable();
             updateStats();
         });
+
+        window.addEventListener('load', initGoogle);
     </script>
 </body>
 </html>
