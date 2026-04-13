@@ -65,24 +65,47 @@
         }
 
         .login-container {
-            max-width: 600px;
+            max-width: 700px;
             margin: 2rem auto;
             background: white;
             padding: 2rem;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            text-align: center;
         }
 
         .login-container h2 {
             margin-bottom: 1rem;
             color: #1a202c;
+            font-size: 24px;
         }
 
         .login-container p {
             color: #718096;
             margin-bottom: 1.5rem;
             line-height: 1.6;
+        }
+
+        .instructions {
+            background: #edf2f7;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border-left: 4px solid #4299e1;
+        }
+
+        .instructions ol {
+            margin-left: 1.5rem;
+            color: #4a5568;
+        }
+
+        .instructions li {
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+        }
+
+        .instructions a {
+            color: #4299e1;
+            text-decoration: underline;
         }
 
         .btn {
@@ -102,6 +125,19 @@
 
         .btn-primary:hover {
             background: #3182ce;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        #fileInput {
+            display: none;
         }
 
         .controls {
@@ -274,14 +310,6 @@
             background: #dd6b20;
         }
 
-        .error {
-            background: #fed7d7;
-            color: #742a2a;
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-        }
-
         .success {
             background: #c6f6d5;
             color: #22543d;
@@ -334,23 +362,30 @@
                 <h1>OT Manager Dashboard</h1>
                 <p>CEx Overtime Tracking & Calculations</p>
             </div>
-            <button class="auth-button" id="authButton" onclick="handleAuth()">Connect Google Sheet</button>
+            <button class="auth-button" id="authButton" onclick="handleAuth()">Load Data</button>
         </div>
     </div>
 
     <div class="main-container">
         <div id="loginSection" class="login-container">
-            <h2>Welcome to OT Manager Dashboard</h2>
-            <p>Click "Connect Google Sheet" in the header to authenticate and load your team's overtime data.</p>
-            <p style="font-size: 12px; color: #a0aec0; margin-top: 1rem;">You will be asked to sign in with Google and grant permission to access your Google Sheet.</p>
+            <h2>Load Your OT Data</h2>
+            <p>To use this dashboard, export your Google Sheet as CSV and upload it here.</p>
+            
+            <div class="instructions">
+                <strong style="color: #2d3748;">How to export from Google Sheets:</strong>
+                <ol>
+                    <li>Open your Google Sheet: <a href="https://docs.google.com/spreadsheets/d/1Z4mKL3CsZDQ3ROksmrhTwqZJpWYPWwlEVU09wQ_u2-g/" target="_blank">Click here</a></li>
+                    <li>Click <strong>File</strong> → <strong>Download</strong> → <strong>Comma Separated Values (.csv)</strong></li>
+                    <li>Click the <strong>"Load Data"</strong> button to upload the CSV file</li>
+                </ol>
+            </div>
+
+            <input type="file" id="fileInput" accept=".csv" onchange="handleFileUpload(event)">
+            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Select CSV File</button>
         </div>
 
         <div id="dashboardSection" class="hidden">
             <div class="controls">
-                <div class="control-group">
-                    <label>Sheet Date</label>
-                    <input type="text" id="sheetDate" placeholder="e.g., 4/13/2026" readonly>
-                </div>
                 <div class="control-group">
                     <label>Holiday Type</label>
                     <select id="holidayType">
@@ -367,9 +402,8 @@
                     </select>
                 </div>
                 <button class="btn btn-primary btn-sm" onclick="applyFilters()">Apply</button>
-                <button class="btn btn-primary btn-sm" onclick="refreshData()">Refresh</button>
                 <button class="btn btn-export btn-sm" onclick="exportToCSV()">Export CSV</button>
-                <button class="btn btn-primary btn-sm" onclick="logout()" style="background: #e53e3e;">Logout</button>
+                <button class="btn btn-secondary btn-sm" onclick="goBack()">Load Different File</button>
             </div>
 
             <div class="stats">
@@ -414,99 +448,70 @@
         </div>
     </div>
 
-    <script src="https://apis.google.com/js/api.js"></script>
     <script>
-        const SPREADSHEET_ID = '1Z4mKL3CsZDQ3ROksmrhTwqZJpWYPWwlEVU09wQ_u2-g';
-        const CLIENT_ID = '1082542759771-pihi7sgr47v4lutnpuu3bkee93jmlvrl.apps.googleusercontent.com';
-        const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
-        
         let sheetData = [];
-        let isAuthenticated = false;
 
-        function initGoogle() {
-            gapi.load('client:auth2', () => {
-                gapi.client.init({
-                    clientId: CLIENT_ID,
-                    scope: SCOPES,
-                    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
-                }).then(() => {
-                    const auth = gapi.auth2.getAuthInstance();
-                    isAuthenticated = auth.isSignedIn.get();
-                    updateUI();
-                    auth.isSignedIn.listen(updateUI);
-                }).catch(err => {
-                    console.error('Init error:', err);
-                    showMessage('Error initializing: ' + err.message, 'error');
-                });
-            });
-        }
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-        function updateUI() {
-            const auth = gapi.auth2.getAuthInstance();
-            isAuthenticated = auth.isSignedIn.get();
-            const loginSection = document.getElementById('loginSection');
-            const dashboardSection = document.getElementById('dashboardSection');
-
-            if (isAuthenticated) {
-                loginSection.classList.add('hidden');
-                dashboardSection.classList.remove('hidden');
-                loadData();
-            } else {
-                loginSection.classList.remove('hidden');
-                dashboardSection.classList.add('hidden');
-            }
-        }
-
-        function handleAuth() {
-            const auth = gapi.auth2.getAuthInstance();
-            if (isAuthenticated) {
-                auth.signOut();
-            } else {
-                auth.signIn();
-            }
-        }
-
-        function logout() {
-            const auth = gapi.auth2.getAuthInstance();
-            auth.signOut();
-        }
-
-        async function loadData() {
-            try {
-                showMessage('Loading data...', 'info');
-                const response = await gapi.client.sheets.spreadsheets.values.get({
-                    spreadsheetId: SPREADSHEET_ID,
-                    range: 'Sheet1!A:J'
-                });
-
-                const rows = response.result.values;
-                if (!rows || rows.length < 2) {
-                    showMessage('No data found', 'error');
-                    return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const csv = e.target.result;
+                    parseCSV(csv);
+                    showDashboard();
+                } catch (error) {
+                    alert('Error reading file: ' + error.message);
                 }
+            };
+            reader.readAsText(file);
+        }
 
-                sheetData = rows.slice(1).map(row => ({
-                    nxtId: row[0] || '',
-                    role: row[1] || '',
-                    name: row[2] || '',
-                    officeHours: row[3] || '',
-                    appointeeHours: row[4] || '',
-                    ssAppointee: row[5] || '',
-                    intercomHours: row[6] || '',
-                    ssIntercom: row[7] || '',
-                    finalHours: parseFloat(row[8]) || 0,
-                    remarks: row[9] || '',
-                    grossSalary: 0,
-                    status: 'Pending'
-                }));
-
-                renderTable();
-                updateStats();
-                showMessage('Data loaded successfully!', 'success');
-            } catch (error) {
-                console.error('Load error:', error);
-                showMessage('Error: ' + error.message, 'error');
+        function parseCSV(csv) {
+            const lines = csv.trim().split('\n');
+            if (lines.length < 2) {
+                throw new Error('CSV file is empty');
             }
+
+            sheetData = [];
+            for (let i = 1; i < lines.length; i++) {
+                const cells = lines[i].split(',').map(cell => cell.trim());
+                if (cells.length >= 9 && cells[0]) {
+                    sheetData.push({
+                        nxtId: cells[0],
+                        role: cells[1],
+                        name: cells[2],
+                        officeHours: cells[3],
+                        appointeeHours: cells[4],
+                        ssAppointee: cells[5],
+                        intercomHours: cells[6],
+                        ssIntercom: cells[7],
+                        finalHours: parseFloat(cells[8]) || 0,
+                        remarks: cells[9] || '',
+                        grossSalary: 0,
+                        status: 'Pending'
+                    });
+                }
+            }
+
+            if (sheetData.length === 0) {
+                throw new Error('No valid data found in CSV');
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            renderTable();
+            updateStats();
+        }
+
+        function goBack() {
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('fileInput').value = '';
+            sheetData = [];
         }
 
         function renderTable() {
@@ -574,10 +579,6 @@
             renderTable();
         }
 
-        function refreshData() {
-            loadData();
-        }
-
         function exportToCSV() {
             const multiplier = parseFloat(document.getElementById('holidayType').value);
             const csv = [
@@ -593,7 +594,7 @@
                 ])
             ];
 
-            const csvContent = csv.map(row => row.join(',')).join('\n');
+            const csvContent = csv.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
             const blob = new Blob([csvContent], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -602,21 +603,15 @@
             a.click();
         }
 
-        function showMessage(msg, type = 'info') {
-            const container = document.getElementById('messageContainer');
-            const className = type === 'error' ? 'error' : (type === 'success' ? 'success' : 'info');
-            container.innerHTML = `<div class="${className}">${msg}</div>`;
-            if (type !== 'info') {
-                setTimeout(() => { container.innerHTML = ''; }, 4000);
-            }
+        function handleAuth() {
+            document.getElementById('fileInput').click();
         }
 
         document.getElementById('holidayType').addEventListener('change', () => {
             renderTable();
             updateStats();
         });
-
-        window.addEventListener('load', initGoogle);
     </script>
 </body>
 </html>
+
