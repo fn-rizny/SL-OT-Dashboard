@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEx OT Manager Dashboard</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 0.25rem;
+        }
+
+        .auth-button {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .auth-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .auth-button.logout {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a5568;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-group input,
+        .control-group select {
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+
+        .control-group input:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3182ce;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+        }
+
+        .btn-export {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #dd6b20;
+        }
+
+        .dashboard {
+            display: none;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a202c;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f7fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            color: #4a5568;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .editable {
+            background: #edf2f7;
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e0;
+            cursor: text;
+            min-width: 80px;
+        }
+
+        .editable:focus {
+            outline: none;
+            background: white;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.1);
+        }
+
+        .status-pending {
+            background: #fed7d7;
+            color: #742a2a;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-confirmed {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .ot-amount {
+            font-weight: 700;
+            color: #2c5282;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #742a2a;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .success {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .login-container {
+            max-width: 500px;
+            margin: 4rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .login-container h2 {
+            margin-bottom: 1rem;
+            color: #1a202c;
+        }
+
+        .login-container p {
+            color: #718096;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group input,
+            .control-group select {
+                min-width: unset;
+                width: 100%;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 0.75rem;
+            }
+
+            .editable {
+                min-width: 60px;
+                padding: 4px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div>
+                <h1>OT Manager Dashboard</h1>
+                <p>CEx Overtime Tracking & Calculations</p>
+            </div>
+            <button class="auth-button" id="authButton" onclick="handleAuth()">Connect Google Sheet</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div id="loginSection" class="login-container">
+            <h2>Welcome</h2>
+            <p>Click "Connect Google Sheet" in the header to authenticate and start tracking OT hours for your team.</p>
+        </div>
+
+        <div id="dashboardSection" class="dashboard">
+            <div class="controls">
+                <div class="control-group">
+                    <label>Sheet Date</label>
+                    <input type="text" id="sheetDate" placeholder="e.g., 4/13/2026" readonly>
+                </div>
+                <div class="control-group">
+                    <label>Holiday Type</label>
+                    <select id="holidayType">
+                        <option value="2.5">Normal Holiday (2.5x)</option>
+                        <option value="4">Special Holiday (4x)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Filter Status</label>
+                    <select id="filterStatus">
+                        <option value="">All</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Confirmed">Confirmed</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
+                <button class="btn btn-secondary" onclick="refreshData()">Refresh</button>
+                <button class="btn btn-export" onclick="exportToCSV()">Export CSV</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-label">Total Employees</div>
+                    <div class="stat-value" id="totalEmployees">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Confirmed Hours</div>
+                    <div class="stat-value" id="confirmedCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total OT Amount</div>
+                    <div class="stat-value" id="totalOT">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Pending Confirmation</div>
+                    <div class="stat-value" id="pendingCount">0</div>
+                </div>
+            </div>
+
+            <div id="messageContainer"></div>
+
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>NXT ID</th>
+                            <th>Name</th>
+                            <th>Role</th>
+                            <th>Hours</th>
+                            <th>Gross Salary</th>
+                            <th>OT Amount</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CLIENT_ID = 'YOUR_CLIENT_ID_HERE'; // You'll need to update this
+        const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+        
+        let sheetData = [];
+        let isAuthenticated = false;
+
+        // Initialize Google API
+        function initGoogleAPI() {
+            gapi.load('client:auth2', () => {
+                gapi.client.init({
+                    clientId: CLIENT_ID,
+                    scope: SCOPES.join(' ')
+                }).then(() => {
+                    const auth2 = gapi.auth2.getAuthInstance();
+                    isAuthenticated = auth2.isSignedIn.get();
+                    updateAuthUI();
+                    
+                    auth2.isSignedIn.listen(updateAuthUI);
+                });
+            });
+        }
+
+        function handleAuth() {
+            const auth2 = gapi.auth2.getAuthInstance();
+            if (isAuthenticated) {
+                auth2.signOut();
+            } else {
+                auth2.signIn();
+            }
+        }
+
+        function updateAuthUI() {
+            const auth2 = gapi.auth2.getAuthInstance();
+            isAuthenticated = auth2.isSignedIn.get();
+
+            const button = document.getElementById('authButton');
+            const loginSection = document.getElementById('loginSection');
+            const dashboardSection = document.getElementById('dashboardSection');
+
+            if (isAuthenticated) {
+                button.textContent = 'Logout';
+                button.classList.add('logout');
+                loginSection.style.display = 'none';
+                dashboardSection.classList.add('active');
+                loadSheetData();
+            } else {
+                button.textContent = 'Connect Google Sheet';
+                button.classList.remove('logout');
+                loginSection.style.display = 'block';
+                dashboardSection.classList.remove('active');
+            }
+        }
+
+        function showMessage(message, type = 'info') {
+            const container = document.getElementById('messageContainer');
+            const className = type === 'error' ? 'error' : (type === 'success' ? 'success' : 'info');
+            container.innerHTML = `<div class="${className}">${message}</div>`;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        async function loadSheetData() {
+            try {
+                const response = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: '1Z4mKL3CsZDQ3ROksmrhTwqZJpWYPWwlEVU09wQ_u2-g',
+                    range: 'Sheet1!A:J'
+                });
+
+                const rows = response.result.values;
+                if (!rows || rows.length < 2) {
+                    showMessage('No data found in sheet', 'error');
+                    return;
+                }
+
+                // Parse data
+                const headers = rows[0];
+                sheetData = rows.slice(1).map(row => ({
+                    nxtId: row[0] || '',
+                    role: row[1] || '',
+                    name: row[2] || '',
+                    officeHours: row[3] || '',
+                    appointeeHours: row[4] || '',
+                    ssAppointee: row[5] || '',
+                    intercomHours: row[6] || '',
+                    ssIntercom: row[7] || '',
+                    finalHours: parseFloat(row[8]) || 0,
+                    remarks: row[9] || '',
+                    grossSalary: 0,
+                    status: 'Pending',
+                    otAmount: 0
+                }));
+
+                // Extract date from header
+                const dateMatch = rows[0].find(cell => cell && cell.match(/\d+\/\d+\/\d+/));
+                if (dateMatch) {
+                    document.getElementById('sheetDate').value = dateMatch;
+                }
+
+                renderTable();
+                updateStats();
+            } catch (error) {
+                showMessage('Error loading sheet: ' + error.message, 'error');
+            }
+        }
+
+        function calculateOT(row) {
+            const multiplier = parseFloat(document.getElementById('holidayType').value);
+            const hours = parseFloat(row.finalHours) || 0;
+            const salary = parseFloat(row.grossSalary) || 0;
+
+            if (salary && hours) {
+                return (salary / 198) * hours * multiplier;
+            }
+            return 0;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            const filterStatus = document.getElementById('filterStatus').value;
+
+            sheetData.forEach((row, index) => {
+                if (filterStatus && row.status !== filterStatus) return;
+
+                const otAmount = calculateOT(row);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.nxtId}</td>
+                    <td>${row.name}</td>
+                    <td>${row.role}</td>
+                    <td>${row.finalHours}</td>
+                    <td>
+                        <input 
+                            type="number" 
+                            class="editable" 
+                            value="${row.grossSalary}" 
+                            onchange="updateSalary(${index}, this.value)"
+                            placeholder="0"
+                        >
+                    </td>
+                    <td><span class="ot-amount">${otAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></td>
+                    <td>
+                        <span class="status-${row.status.toLowerCase()}">
+                            ${row.status}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-success btn-sm" onclick="confirmRow(${index})">
+                            ${row.status === 'Confirmed' ? '✓ Confirmed' : 'Confirm'}
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateSalary(index, value) {
+            sheetData[index].grossSalary = parseFloat(value) || 0;
+            renderTable();
+            updateStats();
+        }
+
+        function confirmRow(index) {
+            sheetData[index].status = sheetData[index].status === 'Confirmed' ? 'Pending' : 'Confirmed';
+            renderTable();
+            updateStats();
+            showMessage('Row status updated', 'success');
+        }
+
+        function applyFilters() {
+            renderTable();
+        }
+
+        function updateStats() {
+            const multiplier = parseFloat(document.getElementById('holidayType').value);
+            
+            let totalEmployees = sheetData.length;
+            let confirmedCount = sheetData.filter(r => r.status === 'Confirmed').length;
+            let pendingCount = sheetData.filter(r => r.status === 'Pending').length;
+            
+            let totalOT = sheetData.reduce((sum, row) => {
+                if (row.grossSalary && row.finalHours) {
+                    return sum + ((row.grossSalary / 198) * row.finalHours * multiplier);
+                }
+                return sum;
+            }, 0);
+
+            document.getElementById('totalEmployees').textContent = totalEmployees;
+            document.getElementById('confirmedCount').textContent = confirmedCount;
+            document.getElementById('pendingCount').textContent = pendingCount;
+            document.getElementById('totalOT').textContent = totalOT.toLocaleString('en-US', { 
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2 
+            });
+        }
+
+        function refreshData() {
+            loadSheetData();
+            showMessage('Data refreshed', 'success');
+        }
+
+        function exportToCSV() {
+            const multiplier = parseFloat(document.getElementById('holidayType').value);
+            const csv = [
+                ['NXT ID', 'Name', 'Role', 'Hours', 'Gross Salary', 'OT Amount', 'Status'],
+                ...sheetData.map(row => [
+                    row.nxtId,
+                    row.name,
+                    row.role,
+                    row.finalHours,
+                    row.grossSalary,
+                    ((row.grossSalary / 198) * row.finalHours * multiplier).toFixed(2),
+                    row.status
+                ])
+            ];
+
+            const csvContent = csv.map(row => row.join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `OT_Report_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Initialize on load
+        window.addEventListener('load', initGoogleAPI);
+
+        // Update OT amounts when holiday type changes
+        document.getElementById('holidayType').addEventListener('change', () => {
+            renderTable();
+            updateStats();
+        });
+    </script>
+</body>
+</html>
